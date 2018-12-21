@@ -20,28 +20,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        webView = (webView)findViewById(R.id.webView);
+        webView = (WebView) findViewById(R.id.webView);
         webView.setWebViewClient(new WebViewClient());
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setBuiltInZoomControls(true);
         webView.loadUrl(URL);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_exit) {
-            finishApp();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
