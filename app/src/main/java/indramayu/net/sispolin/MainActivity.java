@@ -1,15 +1,21 @@
 package indramayu.net.sispolin;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Browser;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.FragmentActivity;
@@ -33,30 +39,99 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import indramayu.net.sispolin.*;
+import indramayu.net.sispolin.Config;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String URL ="https://m.polresindramayu.net/";
-
     private ValueCallback<Uri> mUploadMessage;
     private final static int FILECHOOSER_RESULTCODE = 1;
     private static final String TAG = "MainActivity";
     String UA = "(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
+    final private int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
+
+    private WebView webView;
 
 
-    public class GeoWebViewClient extends WebViewClient{
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            setListeners();
-            return true;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_main);
+        webView = (WebView) findViewById(R.id.webView);
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setUserAgentString(UA);
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setBuiltInZoomControls(false);
+        webSettings.setGeolocationEnabled(true);
+        webView.setWebChromeClient(new GeoWebChromeClient());
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setGeolocationDatabasePath(getFilesDir().getPath() );
+        setListeners();
+        LocationManager mManagerLoc = ( LocationManager ) this.getSystemService ( Context.LOCATION_SERVICE );
+        boolean enabled = mManagerLoc.isProviderEnabled ( LocationManager.GPS_PROVIDER );
+        if ( !enabled )
+        {
+            showDialogGPS ();
         }
+        else if (
+                ContextCompat.checkSelfPermission ( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED )
+        {
+            ActivityCompat.requestPermissions ( this, new String[] {
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA
+            }, 0 );
+        }
+        else {
+            webView.loadUrl("https://m.polresindramayu.net");
+        }
+
+
     }
 
+    private void showDialogGPS ()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder ( this );
+        builder.setCancelable ( false );
+        builder.setTitle ( "Aktifkan GPS" );
+        builder.setInverseBackgroundForced ( true );
+
+        builder.setPositiveButton ( "Aktif", new DialogInterface.OnClickListener ()
+        {
+            public void onClick ( DialogInterface dialog, int which )
+            {
+                startActivity ( new Intent ( android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS ) );
+            }
+        } );
+
+        builder.setNegativeButton ( "Tidak", new DialogInterface.OnClickListener ()
+        {
+            public void onClick ( DialogInterface dialog, int which )
+            {
+                dialog.dismiss ();
+            }
+        } );
+
+        AlertDialog alert = builder.create ();
+        alert.show ();
+    }
 
     public class GeoWebChromeClient extends WebChromeClient {
         @Override
@@ -80,36 +155,6 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog alert = builder.create();
             alert.show();
         }
-    }
-
-
-    WebView webView;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-
-        initFields();
-        setListeners();
-
-
-    }
-
-    public void initFields(){
-        webView = (WebView) findViewById(R.id.webView);
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setUserAgentString(UA);
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setBuiltInZoomControls(false);
-        webSettings.setGeolocationEnabled(true);
-        webView.setWebChromeClient(new GeoWebChromeClient());
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-        webSettings.setAllowFileAccess(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setGeolocationDatabasePath(getFilesDir().getPath() );
-
     }
 
     public void setListeners (){
@@ -155,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl(URL);
         final MyJavaScriptInterface myJavaScriptInterface = new MyJavaScriptInterface(this);
         webView.addJavascriptInterface(myJavaScriptInterface, "AndroidFunction");
     }
@@ -186,6 +230,36 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void onRequestPermissionsResult ( int requestCode, String permissions[], int[] grantResults )
+    {
+        switch ( requestCode )
+        {
+            case 1:
+            {
+
+                if ( grantResults.length > 0 && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED )
+                {
+
+                }
+                else
+                {
+
+                }
+
+                return;
+            }
+
+        }
+    }
+
+    public boolean checkLocationPermission ()
+    {
+        String permission = "android.permission.ACCESS_FINE_LOCATION";
+        int res = this.checkCallingOrSelfPermission ( permission );
+
+        return ( res == PackageManager.PERMISSION_GRANTED );
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent intent) {
@@ -199,14 +273,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private File createImageFile() throws IOException {
+//    private File createImageFile() throws IOException {
+//
+//        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+//        String imageFileName = "img_" + timeStamp + "_";
+//        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+//        return File.createTempFile(imageFileName, ".jpg", storageDir);
+//    }
 
-        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "img_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        return File.createTempFile(imageFileName, ".jpg", storageDir);
-    }
 
+    //public void displayUrl() {
+    //    String.valueOf("https://m.polresindramayu.net/");
+    //}
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
