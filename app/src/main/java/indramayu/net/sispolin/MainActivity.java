@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.provider.Browser;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
 import android.text.Html;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -42,11 +43,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String URL ="https://m.polresindramayu.net/";
 
-
     private ValueCallback<Uri> mUploadMessage;
     private final static int FILECHOOSER_RESULTCODE = 1;
-
-    String UA = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
+    private static final String TAG = "MainActivity";
+    String UA = "(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
 
 
     public class GeoWebViewClient extends WebViewClient{
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "onGeolocationPermissionsShowPrompt()");
 
             final boolean remember = false;
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder.setTitle("Location");
             builder.setMessage("Would like to use your Current Location").setCancelable(true).setPositiveButton("Allow", new DialogInterface.OnClickListener() {
                 @Override
