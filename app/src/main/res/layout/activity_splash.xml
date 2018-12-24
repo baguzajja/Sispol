@@ -12,6 +12,6 @@
         android:layout_width="240dp"
         android:layout_height="289dp"
         android:contentDescription="@null"
-        android:src="@drawable/ic_launcher" />
+        android:src="@mipmap/imylogo" />
 
 </LinearLayout>
